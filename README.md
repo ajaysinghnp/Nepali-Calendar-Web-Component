@@ -41,7 +41,7 @@ This library is purely HTML, CSS and Vanilla JS based that's why doesnot need an
 All you need is to download the library file from this repo by either downloading a ZIP version or by command using git clone as
 
 ```bash
-git clone https://github.com/mentormaya/Nepali-Calendar-Web-Component.git
+git clone https://github.com/ajaysinghnp/Nepali-Calendar-Web-Component.git
 ```
 
 and place the file inside the library or js folder of your project and include this in your html document and you are all set.
@@ -51,8 +51,8 @@ and place the file inside the library or js folder of your project and include t
 what you can do instead is you can use the cdn of the project directly from GitHub Pages with the following link
 
 ```bash
-https://mentormaya.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-1.0.0.min.css
-https://mentormaya.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-web-component.min.js
+https://ajaysinghnp.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-1.0.0.min.css
+https://ajaysinghnp.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-web-component.min.js
 ```
 
 ## Usage
@@ -68,7 +68,7 @@ All you need to do is just import it in to your HTML document as
 or with cdn link your script should look like
 
 ```html
-<script src="https://mentormaya.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-web-component.min.js"></script>
+<script src="https://ajaysinghnp.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-web-component.min.js"></script>
 ```
 
 and you are all set. You can go a head and create a nepali calendar with the custom component provided by this library.
@@ -83,7 +83,7 @@ You can also use your own calendar title with the slot named _title_ provided wh
 
 ```html
 <nepali-calendar
-  style="https://mentormaya.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-1.0.0.min.css"
+  style="https://ajaysinghnp.github.io/Nepali-Calendar-Web-Component/src/nepali-calendar-1.0.0.min.css"
   lang="nep"
 >
   <div slot="title">
