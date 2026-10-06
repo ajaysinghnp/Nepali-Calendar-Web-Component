@@ -1,39 +1,637 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nepali Calendar with web component</title>
-    <link rel="stylesheet" href="main.css">
+    <title>Nepali Calendar Web Component</title>
 
-</head>
+    <style>
+      :root {
+        color-scheme: light;
 
-<body>
+        --site-bg: #eef4f6;
+        --site-panel: #fafdfe;
+        --site-text: #0b1f26;
+        --site-muted: #4a6169;
+        --site-border: rgba(11, 31, 38, 0.12);
+        --site-accent: #0e7490;
+        --site-accent-soft: rgba(14, 116, 144, 0.08);
+        --site-surface-border: rgba(14, 116, 144, 0.24);
+        --grid-line: rgba(14, 116, 144, 0.07);
+        --glow-a: rgba(8, 145, 178, 0.1);
+        --glow-b: rgba(14, 165, 233, 0.08);
+        --live-dot: #0e7490;
+        --shadow: 0 18px 50px rgba(14, 62, 78, 0.12);
+        --radius: 0.375rem;
+      }
 
-    <div class="container">
-        <h3 class="title-header">Nepali calendar will be rendered here : <span class="selected"></span></h3>
-        <nepali-calendar
-            style="src/nepali-calendar-1.0.0.min.css"
-            lang="nep">
-            <div slot="title">
+      html.dark {
+        color-scheme: dark;
+
+        --site-bg: #090b0d;
+        --site-panel: #0d1215;
+        --site-text: #f4fbfc;
+        --site-muted: #a1adb1;
+        --site-border: rgba(255, 255, 255, 0.1);
+        --site-accent: #67e8f9;
+        --site-accent-soft: rgba(103, 232, 249, 0.1);
+        --site-surface-border: rgba(103, 232, 249, 0.28);
+        --grid-line: rgba(103, 232, 249, 0.045);
+        --glow-a: rgba(34, 211, 238, 0.12);
+        --glow-b: rgba(14, 165, 233, 0.1);
+        --live-dot: #67e8f9;
+        --shadow: 0 20px 60px rgba(3, 10, 13, 0.3);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        background: var(--site-bg);
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        overflow-x: hidden;
+        background: var(--site-bg);
+        color: var(--site-text);
+        font-family: "Segoe UI", ui-sans-serif, sans-serif;
+        transition:
+          background-color 180ms ease,
+          color 180ms ease;
+      }
+
+      a,
+      button {
+        font: inherit;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .site-shell {
+        position: relative;
+        min-height: 100vh;
+        isolation: isolate;
+      }
+
+      .signal-grid {
+        position: fixed;
+        z-index: -3;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--grid-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: linear-gradient(to bottom, black, transparent 75%);
+      }
+
+      .shuttle-field {
+        position: fixed;
+        z-index: -2;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .shuttle-field::before,
+      .shuttle-field::after {
+        position: absolute;
+        width: 32rem;
+        height: 10rem;
+        border-radius: 9999px;
+        content: "";
+        filter: blur(70px);
+        opacity: 0.12;
+      }
+
+      .shuttle-field::before {
+        top: 18%;
+        left: -10rem;
+        background: #22d3ee;
+        animation: shuttle-horizontal 18s ease-in-out infinite alternate;
+      }
+
+      .shuttle-field::after {
+        top: 62%;
+        right: -12rem;
+        background: #0ea5e9;
+        animation: shuttle-horizontal 22s ease-in-out infinite alternate-reverse;
+      }
+
+      .site-header {
+        position: sticky;
+        z-index: 10;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: min(80%, 1120px);
+        min-height: 4.5rem;
+        margin: 0 auto;
+        border-bottom: 1px solid var(--site-border);
+        background: color-mix(in srgb, var(--site-bg) 84%, transparent);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        display: inline-grid;
+        width: 2.25rem;
+        height: 2.25rem;
+        flex: none;
+        place-items: center;
+        border: 1px solid var(--site-surface-border);
+        border-radius: var(--radius);
+        background: var(--site-accent-soft);
+        color: var(--site-accent);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+      }
+
+      .brand-copy {
+        display: grid;
+        gap: 0.1rem;
+      }
+
+      .brand-copy strong {
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .brand-copy small {
+        color: var(--site-muted);
+        font-size: 0.68rem;
+      }
+
+      .site-navigation {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        color: var(--site-muted);
+        font-size: 0.82rem;
+      }
+
+      .site-navigation a {
+        transition: color 150ms ease;
+      }
+
+      .site-navigation a:hover,
+      .site-navigation a:focus-visible {
+        color: var(--site-accent);
+      }
+
+      .theme-toggle {
+        display: inline-grid;
+        width: 2rem;
+        height: 2rem;
+        place-items: center;
+        border: 1px solid var(--site-surface-border);
+        border-radius: var(--radius);
+        background: var(--site-panel);
+        color: var(--site-accent);
+        transition:
+          background-color 150ms ease,
+          border-color 150ms ease;
+      }
+
+      .theme-toggle:hover,
+      .theme-toggle:focus-visible {
+        border-color: var(--site-accent);
+        background: var(--site-accent-soft);
+        outline: none;
+      }
+
+      .theme-icon {
+        grid-area: 1 / 1;
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .theme-icon-moon {
+        display: none;
+      }
+
+      .dark .theme-icon-sun {
+        display: none;
+      }
+
+      .dark .theme-icon-moon {
+        display: block;
+      }
+
+      .page-content {
+        width: min(80%, 860px);
+        margin: 0 auto;
+        padding: 7rem 0 5rem;
+      }
+
+      .intro {
+        margin-bottom: 2rem;
+      }
+
+      .section-code {
+        margin: 0 0 0.9rem;
+        color: var(--site-accent);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .section-code::before {
+        content: "// ";
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+      }
+
+      h1 {
+        color: var(--site-text);
+        font-size: clamp(2.4rem, 7vw, 5rem);
+        font-weight: 750;
+        letter-spacing: -0.06em;
+        line-height: 0.98;
+      }
+
+      .sparkle-text {
+        display: block;
+        background: linear-gradient(
+          115deg,
+          var(--site-accent) 0 42%,
+          color-mix(in srgb, var(--site-accent) 40%, white) 47%,
+          white 50%,
+          color-mix(in srgb, var(--site-accent) 40%, white) 53%,
+          var(--site-accent) 58% 100%
+        );
+        background-position: 100% 0;
+        background-size: 250% 100%;
+        background-clip: text;
+        color: transparent;
+        animation: sparkle-sweep 30s ease-in-out infinite;
+      }
+
+      .intro-description {
+        max-width: 38rem;
+        margin: 1.3rem 0 0;
+        color: var(--site-muted);
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+
+      .calendar-shell {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--site-surface-border);
+        border-radius: var(--radius);
+        background: color-mix(in srgb, var(--site-panel) 88%, transparent);
+        box-shadow: var(--shadow);
+      }
+
+      .calendar-shell::before {
+        position: absolute;
+        z-index: -1;
+        inset: 0;
+        background:
+          radial-gradient(circle at 15% 5%, var(--glow-a), transparent 30%),
+          radial-gradient(circle at 90% 95%, var(--glow-b), transparent 30%);
+        content: "";
+      }
+
+      .calendar-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 5rem;
+        border-bottom: 1px solid var(--site-border);
+        padding: 1rem 1.25rem;
+      }
+
+      .status-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: var(--site-accent);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .calendar-heading h2 {
+        margin-top: 0.35rem;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
+      .live-dot {
+        width: 0.4rem;
+        height: 0.4rem;
+        border-radius: 9999px;
+        background: var(--live-dot);
+        animation: live-pulse 1.8s ease-out infinite;
+      }
+
+      .calendar-stage {
+        display: grid;
+        min-height: 28rem;
+        place-items: center;
+        padding: 2rem;
+      }
+
+      nepali-calendar {
+        display: block;
+        width: min(100%, 560px);
+      }
+
+      .selected {
+        min-height: 1.5rem;
+        margin: 0;
+        border-top: 1px solid var(--site-border);
+        padding: 0.85rem 1.25rem;
+        color: var(--site-muted);
+        font-size: 0.82rem;
+        text-align: center;
+      }
+
+      .site-footer {
+        display: flex;
+        justify-content: space-between;
+        width: min(80%, 1120px);
+        margin: 0 auto;
+        border-top: 1px solid var(--site-border);
+        padding: 1.25rem 0 2rem;
+        color: var(--site-muted);
+        font-size: 0.75rem;
+      }
+
+      .site-footer a {
+        color: var(--site-accent);
+      }
+
+      @keyframes live-pulse {
+        0% {
+          box-shadow: 0 0 0 0
+            color-mix(in srgb, var(--live-dot) 75%, transparent);
+        }
+
+        70% {
+          box-shadow: 0 0 0 0.45rem
+            color-mix(in srgb, var(--live-dot) 0%, transparent);
+        }
+
+        100% {
+          box-shadow: 0 0 0 0
+            color-mix(in srgb, var(--live-dot) 0%, transparent);
+        }
+      }
+
+      @keyframes shuttle-horizontal {
+        from {
+          transform: translate3d(0, 0, 0) rotate(-8deg);
+        }
+
+        to {
+          transform: translate3d(70vw, 10vh, 0) rotate(8deg);
+        }
+      }
+
+      @keyframes sparkle-sweep {
+        0% {
+          background-position: 100% 0;
+        }
+
+        55%,
+        100% {
+          background-position: 0% 0;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .site-header,
+        .page-content,
+        .site-footer {
+          width: min(90%, 1120px);
+        }
+
+        .brand-copy small {
+          display: none;
+        }
+
+        .page-content {
+          padding: 5rem 0 3.5rem;
+        }
+
+        h1 {
+          font-size: clamp(2.5rem, 13vw, 4rem);
+        }
+
+        .calendar-stage {
+          min-height: 24rem;
+          padding: 1rem 0.5rem;
+        }
+
+        .site-footer {
+          display: grid;
+          gap: 0.45rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="site-shell">
+      <div class="signal-grid" aria-hidden="true"></div>
+      <div class="shuttle-field" aria-hidden="true"></div>
+
+      <header class="site-header">
+        <a class="brand" href="https://ajaysingh.com.np/">
+          <span class="brand-mark">AS</span>
+
+          <span class="brand-copy">
+            <strong>Ajay Singh</strong>
+            <small>Nepali Calendar Web Component</small>
+          </span>
+        </a>
+
+        <nav class="site-navigation" aria-label="Primary navigation">
+          <a
+            href="https://github.com/ajaysinghnp/Nepali-Calendar-Web-Component"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+
+          <button
+            class="theme-toggle"
+            type="button"
+            aria-label="Switch to dark theme"
+            aria-pressed="false"
+          >
+            <span class="theme-icon theme-icon-sun" aria-hidden="true">☼</span>
+            <span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
+          </button>
+        </nav>
+      </header>
+
+      <main class="page-content">
+        <section class="intro">
+          <p class="section-code">Nepali calendar</p>
+
+          <h1>
+            Nepali Calendar
+            <span class="sparkle-text">Web Component</span>
+          </h1>
+
+          <p class="intro-description">
+            A simple Nepali calendar web component for JavaScript applications.
+          </p>
+        </section>
+
+        <section class="calendar-shell">
+          <div class="calendar-heading">
+            <div>
+              <span class="status-label">
+                <span class="live-dot" aria-hidden="true"></span>
+                Live demo
+              </span>
+
+              <h2>Nepali calendar will be rendered here</h2>
+            </div>
+          </div>
+
+          <div class="calendar-stage">
+            <!-- Existing calendar CSS from the repository -->
+            <nepali-calendar
+              style="src/nepali-calendar-1.0.0.min.css"
+              lang="nep"
+            >
+              <div slot="title">
                 <strong>२०००-२०९९</strong>
                 <small>नेपाली क्यालेण्डर</small>
-            </div>
-        </nepali-calendar>
-    </div>
-    <script src="src/nepali-calendar-web-component.min.js">
-    </script>
-    <script>
-        let dis = document.querySelector('.selected');
-        const arrayOfWeekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        let calendar = document.querySelector("nepali-calendar");
-        calendar.addEventListener('select', ({
-            detail
-        }) => {
-            dis.innerHTML = arrayOfWeekdays[detail.day - 1] + " " + detail.np + " BS & " + detail.int + " AD ";
-        });
-    </script>
-</body>
+              </div>
+            </nepali-calendar>
+          </div>
 
+          <p class="selected" aria-live="polite"></p>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>Nepali Calendar Web Component</span>
+
+        <a
+          href="https://github.com/ajaysinghnp/Nepali-Calendar-Web-Component"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View source
+        </a>
+      </footer>
+    </div>
+
+    <!-- Existing calendar JavaScript from the repository -->
+    <script src="src/nepali-calendar-web-component.min.js"></script>
+
+    <script>
+      const themeToggle = document.querySelector(".theme-toggle");
+      const calendar = document.querySelector("nepali-calendar");
+      const selectedDisplay = document.querySelector(".selected");
+
+      const savedTheme = localStorage.getItem("theme");
+
+      if (
+        savedTheme === "dark" ||
+        (!savedTheme &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ) {
+        document.documentElement.classList.add("dark");
+      }
+
+      function updateThemeButton() {
+        const darkModeEnabled =
+          document.documentElement.classList.contains("dark");
+
+        themeToggle.setAttribute(
+          "aria-label",
+          darkModeEnabled
+            ? "Switch to light theme"
+            : "Switch to dark theme"
+        );
+
+        themeToggle.setAttribute(
+          "aria-pressed",
+          String(darkModeEnabled)
+        );
+      }
+
+      themeToggle.addEventListener("click", () => {
+        const darkModeEnabled =
+          document.documentElement.classList.toggle("dark");
+
+        localStorage.setItem(
+          "theme",
+          darkModeEnabled ? "dark" : "light"
+        );
+
+        updateThemeButton();
+      });
+
+      updateThemeButton();
+
+      const arrayOfWeekdays = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+
+      calendar.addEventListener("select", ({ detail }) => {
+        selectedDisplay.textContent =
+          arrayOfWeekdays[detail.day - 1] +
+          " " +
+          detail.np +
+          " BS & " +
+          detail.int +
+          " AD";
+      });
+    </script>
+  </body>
 </html>
