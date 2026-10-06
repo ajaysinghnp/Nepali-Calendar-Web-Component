@@ -1,6 +1,6 @@
 # Nepali Calendar JS Library :nepal:
 
-![Nepali Calendar](https://raw.githubusercontent.com/ajaysinghnp/nepali-calendar-web-component/master/Snips/Calendar.png)
+![Nepali Calendar](Snips/Calendar.png)
 
 ## Demo
 
